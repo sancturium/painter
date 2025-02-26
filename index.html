@@ -132,32 +132,40 @@
     // Обработка событий ввода параметров
     const MAX_LEN = 7;
     retrievedValues.forEach(retrievedValue => {
-        // retrievedValue.addEventListener('keypress', (event) => {
-            retrievedValue.addEventListener('keydown', (event) => {
+        // Проверка на цифры и ограничение длины ввода
+        retrievedValue.addEventListener('input', (event) => {
+            const value = retrievedValue.innerHTML;
+            
+            /*
             // отслеживание нажатия "Enter"
             if (event.code === "Enter") {  
                 event.preventDefault();
             };
-            // можно вводить только цифры
-            if (isNaN(String.fromCharCode(event.which))) {
-                event.preventDefault();
+            */            
+                        
+            // Проверка на цифры
+            if (!/^\d*$/.test(value)) {
+                retrievedValue.innerHTML = value.replace(/\D/g, ''); // Удаляем все нецифровые символы
                 alert("Можно вводить только цифры.");
-            };
-            // ограничение длины ввода
-            if (retrievedValue.innerHTML.length >= MAX_LEN) {
-                retrievedValue.innerHTML = retrievedValue.innerHTML.substr(0, (MAX_LEN-1));
-                // alert("Длина ввода - " + MAX_LEN + " символов.");
-            };
+            }
+            
+            // Ограничение длины ввода
+            if (value.length > MAX_LEN) {
+                retrievedValue.innerHTML = value.substr(0, MAX_LEN);
+            }           
         });
+
         // Отслеживание события "Вставить"
         retrievedValue.addEventListener('paste', (event) => {
-            let data = event.clipboardData.getData('text/html') ||
-                event.clipboardData.getData('text/plain');
-            // Если текст содержит нецифровые символы, предотвращаем вставку
-            if (!/^\d*$/.test(data)) {               
-                event.preventDefault();
+            event.preventDefault(); // Предотвращаем стандартное поведение
+            const data = (event.clipboardData || window.clipboardData).getData('text');
+            const cleanedData = data.replace(/\D/g, ''); // Удаляем все нецифровые символы
+
+            if (cleanedData.length > 0) {
+                retrievedValue.innerHTML = cleanedData.substr(0, MAX_LEN); // Ограничиваем длину
+            } else {
                 alert("Можно вставлять только цифры.");
-            };
+            }            
         });
     });
    
@@ -198,7 +206,7 @@
         })
             .then(device => {
                 console.log('Выбранное устройство: ', device.name);
-                bleStateContainer.innerHTML = 'Выполнено подключение к устройству: ' + device.name;
+                bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
                 bleStateContainer.style.color = "#24af37";
                 device.addEventListener('gattservicedisconnected', onDisconnected);
                 return device.gatt.connect();
@@ -211,25 +219,31 @@
             .then(service => {
                 bleServiceFound = service;
                 console.log("Обнаруженная услуга:", service.uuid);
-                
-                // Цикл для получения и настройки каждой характеристики
-                return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)))
-                    .then(characteristics => {
-                        characteristics.forEach(characteristic => {
-                            console.log("Обнаруженная характеристика: ", characteristic.uuid);
-                            characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-                            // characteristic.startNotifications();
-                            console.log("Запуск уведомлений для: ", characteristic.uuid);
-                            // const tmp_uuid = characteristic.uuid;
-                            // const tmp_uuid = new TextDecoder().decode(characteristic.uuid);
-                            // console.log("ДЕКОДИРОВАННАЯ СТРОКА: ", typeof(characteristic.uuid));
-                            readCharacteristic(characteristic.uuid);
-                        });
-                    });
-            })           
-            .catch(error => {
-                console.log('Error: ', error);
-            });
+                // Получаем все характеристики
+                return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
+            })
+            .then(characteristics => {
+                // Читаем значения для каждой характеристики    
+                return Promise.all(characteristics.map(characteristic => {
+                    console.log("Обнаруженная характеристика: ", characteristic.uuid);
+                    characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+                    return characteristic.readValue().then(value => {
+                        const decodedValue = ((value.getUint32(0) & 0xFF) << 24)
+                            | ((value.getUint32(0) & 0xFF00) << 8)
+                            | ((value.getUint32(0) >> 8) & 0xFF00)
+                            | ((value.getUint32(0) >> 24) & 0xFF);
+                        console.log("Декодированное значение: ", decodedValue);
+                        const index = indexByUUUI[characteristic.uuid];
+                        if (index !== undefined) {
+                            retrievedValues[index].innerHTML = decodedValue;
+                            valueByUUID[characteristic.uuid] = decodedValue;
+                        }
+                });
+            }));
+        })
+        .catch(error => {
+            console.log('Error: ', error);
+        });
     }
 
     function onDisconnected(event) {
