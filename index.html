@@ -206,8 +206,8 @@
         })
             .then(device => {
                 console.log('Выбранное устройство: ', device.name);
-                bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
-                bleStateContainer.style.color = "#24af37";
+                // bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
+                // bleStateContainer.style.color = "#24af37";
                 device.addEventListener('gattservicedisconnected', onDisconnected);
                 return device.gatt.connect();
             })
@@ -219,6 +219,8 @@
             .then(service => {
                 bleServiceFound = service;
                 console.log("Обнаруженная услуга:", service.uuid);
+                bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
+                bleStateContainer.style.color = "#24af37";
                 // Получаем все характеристики
                 return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
             })
