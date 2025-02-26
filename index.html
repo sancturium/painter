@@ -204,42 +204,42 @@
             filters: [{ name: deviceName }],
             optionalServices: [bleService]
         })
-            .then(device => {
-                console.log('Выбранное устройство: ', device.name);
-                // bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
-                // bleStateContainer.style.color = "#24af37";
-                device.addEventListener('gattservicedisconnected', onDisconnected);
-                return device.gatt.connect();
-            })
-            .then(gattServer => {
-                bleServer = gattServer;
-                console.log("Подключен к серверу GATT");
-                return bleServer.getPrimaryService(bleService);
-            })
-            .then(service => {
-                bleServiceFound = service;
-                console.log("Обнаруженная услуга:", service.uuid);
-                bleStateContainer.innerHTML = 'Подключено';
-                bleStateContainer.style.color = "#24af37";
-                // Получаем все характеристики
-                return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
-            })
-            .then(characteristics => {
-                // Читаем значения для каждой характеристики    
-                return Promise.all(characteristics.map(characteristic => {
-                    console.log("Обнаруженная характеристика: ", characteristic.uuid);
-                    characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-                    return characteristic.readValue().then(value => {
-                        const decodedValue = ((value.getUint32(0) & 0xFF) << 24)
-                            | ((value.getUint32(0) & 0xFF00) << 8)
-                            | ((value.getUint32(0) >> 8) & 0xFF00)
-                            | ((value.getUint32(0) >> 24) & 0xFF);
-                        console.log("Декодированное значение: ", decodedValue);
-                        const index = indexByUUUI[characteristic.uuid];
-                        if (index !== undefined) {
-                            retrievedValues[index].innerHTML = decodedValue;
-                            valueByUUID[characteristic.uuid] = decodedValue;
-                        }
+        .then(device => {
+            console.log('Выбранное устройство: ', device.name);
+            // bleStateContainer.innerHTML = 'Выполнено подключение к устройству: ' + device.name;
+            // bleStateContainer.style.color = "#24af37";
+            device.addEventListener('gattservicedisconnected', onDisconnected);
+            return device.gatt.connect();
+        })
+        .then(gattServer => {
+            bleServer = gattServer;
+            console.log("Подключен к серверу GATT");
+            return bleServer.getPrimaryService(bleService);
+        })
+        .then(service => {
+            bleServiceFound = service;
+            console.log("Обнаруженная услуга:", service.uuid);
+            bleStateContainer.innerHTML = 'Подключено';
+            bleStateContainer.style.color = "#24af37";
+            // Получаем все характеристики
+            return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
+        })
+        .then(characteristics => {
+            // Читаем значения для каждой характеристики
+            return Promise.all(characteristics.map(characteristic => {
+                console.log("Обнаруженная характеристика: ", characteristic.uuid);
+                characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+                return characteristic.readValue().then(value => {
+                    const decodedValue = ((value.getUint32(0) & 0xFF) << 24)
+                        | ((value.getUint32(0) & 0xFF00) << 8)
+                        | ((value.getUint32(0) >> 8) & 0xFF00)
+                        | ((value.getUint32(0) >> 24) & 0xFF);
+                    console.log("Декодированное значение: ", decodedValue);
+                    const index = indexByUUUI[characteristic.uuid];
+                    if (index !== undefined) {
+                        retrievedValues[index].innerHTML = decodedValue;
+                        valueByUUID[characteristic.uuid] = decodedValue;
+                    }
                 });
             }));
         })
