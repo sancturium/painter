@@ -21,7 +21,7 @@
                     <button id="connectBleButton">Подключиться</button>
                     <button id="disconnectBleButton">Отключиться</button>
                 </p>
-                <p>Статус подключения: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
+                <p>Статус подключения: <strong><span id="bleState" style="color:#d13a30;">Отключено</span></strong></p>
             </div>
         </div>
         <div class="card-grid">
@@ -206,6 +206,74 @@
         })
         .then(device => {
             console.log('Выбранное устройство: ', device.name);
+            device.addEventListener('gattservicedisconnected', onDisconnected);
+            return device.gatt.connect();
+        })
+        .then(gattServer => {
+            bleServer = gattServer;
+            console.log("Подключен к серверу GATT");
+            return bleServer.getPrimaryService(bleService);
+        })
+        .then(service => {
+            bleServiceFound = service;
+            console.log("Обнаруженная услуга:", service.uuid);
+            bleStateContainer.innerHTML = 'Подключено';
+            bleStateContainer.style.color = "#24af37";
+            // Читаем характеристики последовательно
+            return readCharacteristicsSequentially(service, characteristicsUUIDs);
+        })
+        .catch(error => {
+            console.log('Ошибка при подключении:', error);
+        });
+    }
+
+    function readCharacteristicsSequentially(service, uuids) {
+        let index = 0;
+        function readNextCharacteristic() {
+            if (index >= uuids.length) {
+                console.log("Все характеристики прочитаны.");
+                return;
+            }
+            const uuid = uuids[index];
+            index++;
+            service.getCharacteristic(uuid)
+                .then(characteristic => {
+                    console.log("Характеристика найдена: ", characteristic.uuid);
+                    return characteristic.readValue();
+                })
+                .then(value => {
+                    const decodedValue = ((value.getUint32(0) & 0xFF) << 24)
+                        | ((value.getUint32(0) & 0xFF00) << 8)
+                        | ((value.getUint32(0) >> 8) & 0xFF00)
+                        | ((value.getUint32(0) >> 24) & 0xFF);
+                    console.log("Декодированное значение для", uuid, ":", decodedValue);
+                    const index = indexByUUUI[uuid];
+                    if (index !== undefined) {
+                        retrievedValues[index].innerHTML = decodedValue;
+                        valueByUUID[uuid] = decodedValue;
+                    }
+                    // Читаем следующую характеристику
+                    readNextCharacteristic();
+                })
+                .catch(error => {
+                    console.error("Ошибка при чтении характеристики:", uuid, error);
+                    // Продолжаем чтение следующей характеристики, даже если текущая завершилась ошибкой
+                    readNextCharacteristic();
+                });
+        }
+        // Начинаем чтение
+        readNextCharacteristic();
+    }
+
+    /*
+    function connectToDevice() {
+        console.log('Инициализация Bluetooth...');
+        navigator.bluetooth.requestDevice({
+            filters: [{ name: deviceName }],
+            optionalServices: [bleService]
+        })
+        .then(device => {
+            console.log('Выбранное устройство: ', device.name);
             // bleStateContainer.innerHTML = 'Выполнено подключение к устройству: ' + device.name;
             // bleStateContainer.style.color = "#24af37";
             device.addEventListener('gattservicedisconnected', onDisconnected);
@@ -247,9 +315,10 @@
             console.log('Error: ', error);
         });
     }
+    */
 
     function onDisconnected(event) {
-        console.log('Device Disconnected:', event.target.device.name);
+        console.log('Отсключение от устройства:', event.target.device.name);
         bleStateContainer.innerHTML = "Устройство отключено";
         bleStateContainer.style.color = "#d13a30";
 
