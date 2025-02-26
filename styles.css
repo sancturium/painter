@@ -10,7 +10,7 @@ h1 {
 }
 
 h2 {
-    font-size: 1,2vw;
+    font-size: 1.2vw;
     color: rgb(0, 0, 0);
 }
 
@@ -48,7 +48,7 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 4px;
-    font-size: 0,8vw;
+    font-size: 0.8vw;
 }
 
 #puskButton {
@@ -84,9 +84,9 @@ button {
 
 .gray-label {
     color: #bebebe;
-    font-size: 0,8vw;
+    font-size: 0.8vw;
 }
 
 .reading {
-    font-size: 0,9vw;
+    font-size: 0.9vw;
 }
