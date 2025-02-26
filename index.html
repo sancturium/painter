@@ -219,7 +219,7 @@
             .then(service => {
                 bleServiceFound = service;
                 console.log("Обнаруженная услуга:", service.uuid);
-                bleStateContainer.innerHTML = 'Подключено устройство: ' + device.name;
+                bleStateContainer.innerHTML = 'Подключено';
                 bleStateContainer.style.color = "#24af37";
                 // Получаем все характеристики
                 return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
