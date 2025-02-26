@@ -5,8 +5,13 @@ html {
 }
 
 h1 {
-    font-size: 1.8rem;
+    font-size: 1.5vw;
     color: white;
+}
+
+h2 {
+    font-size: 1,2vw;
+    color: rgb(0, 0, 0);
 }
 
 .topnav {
@@ -43,6 +48,7 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 4px;
+    font-size: 0,8vw;
 }
 
 #puskButton {
@@ -78,9 +84,9 @@ button {
 
 .gray-label {
     color: #bebebe;
-    font-size: 1rem;
+    font-size: 0,8vw;
 }
 
 .reading {
-    font-size: 1rem;
+    font-size: 0,9vw;
 }
