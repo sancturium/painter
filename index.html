@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Malevich V1</title>
+    <title>Палитра</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="favicon.ico">
     <link rel="stylesheet" type="text/css" href="styles.css">
@@ -11,7 +11,7 @@
 
 <body>
     <div class="topnav">
-        <h1>Malevich V1</h1>
+        <h1>Палитра V1</h1>
     </div>
 
     <div class="content">
@@ -24,23 +24,26 @@
                 <p>Статус подключения: <strong><span id="bleState" style="color:#d13a30;">Отключено</span></strong></p>
             </div>
         </div>
+        <p class="reading">Обновление: <span id="timestamp"></span></p>
         <div class="card-grid">
             <div class="card">
                 <h2>Параметры</h2>
                 <p class="reading">Задержка на включение, мс: <span id="valueContainer1" contenteditable="true">0</span></p>
                 <p class="reading">Время на движение вперед, мс: <span id="valueContainer2" contenteditable="true">0</span></p>
                 <p class="reading">Время на движение назад, мс: <span id="valueContainer3" contenteditable="true">0</span></p>
+                <p class="reading">Задержка на переключение, мс: <span id="valueContainer4" contenteditable="true">0</span></p>
                 <!-- <p class="reading">Управление LED: <span id="valueContainer4" contenteditable="true">0</span></p> -->
                 <button id="writeButton">Записать параметры</button>
                 <!--  <button id="readButton">Read</button>   -->
-                <p class="gray-label">Обновление: <span id="timestamp"></span></p>
+                <!-- <p class="gray-label">Обновление: <span id="timestamp"></span></p> -->
             </div>
             <div class="card">
                 <h2>Удаленный пуск</h2>
                 <button id="puskButton">Пуск</button>
                 <button id="stopButton">Стоп</button>
                 <p class="gray-label">Последняя команда: <span id="valueSent"></span></p>
-            </div>
+                <p class="reading">Текущий статус: <span id="valueContainer5">Неизвестно</span></p>
+            </div>            
             <!--
             <div class="card">
                 <h2>Control GPIO 2</h2>
@@ -79,18 +82,23 @@
     const stopButton= document.getElementById('stopButton') // Команда "Стоп"
 
     //Define BLE Device Specs
-    var deviceName = 'Painter';
+    var deviceName = 'Palitra';
 
     var bleService = '19b10000-e8f2-537e-4f6c-d104768a1214';
     const Characteristic1 = '19b10001-e8f2-537e-4f6c-d104768a1214'; // Задержка на включение
     const Characteristic2 = '19b10002-e8f2-537e-4f6c-d104768a1214'; // Время на движение вперед
     const Characteristic3 = '19b10003-e8f2-537e-4f6c-d104768a1214'; // Время на движение назад
     const Characteristic4 = '19b10004-e8f2-537e-4f6c-d104768a1214'; // Пуск/Стоп
+    const Characteristic5 = '19b10005-e8f2-537e-4f6c-d104768a1214'; // Задержка на переключение
+    const Characteristic6 = '19b10006-e8f2-537e-4f6c-d104768a1214'; // Статус
 
+    // Для уставок
     const characteristicsUUIDs = [
         Characteristic1,
         Characteristic2,
         Characteristic3, 
+        Characteristic5,
+        Characteristic6,
     //    Characteristic4
     ];
 
@@ -98,28 +106,31 @@
         Characteristic1,
         Characteristic2,
         Characteristic3, 
-        Characteristic4
+        Characteristic4,
+        Characteristic5,
     ];
 
     const retrievedValues = [
         document.getElementById('valueContainer1'),
         document.getElementById('valueContainer2'),
         document.getElementById('valueContainer3'),
-    //    document.getElementById('valueContainer4'),
+        document.getElementById('valueContainer4'),
+        document.getElementById('valueContainer5'),
     ];
 
     const indexByUUUI = {
         '19b10001-e8f2-537e-4f6c-d104768a1214': 0,
         '19b10002-e8f2-537e-4f6c-d104768a1214': 1,
         '19b10003-e8f2-537e-4f6c-d104768a1214': 2,
-    //    '19b10004-e8f2-537e-4f6c-d104768a1214': 3,
+        '19b10005-e8f2-537e-4f6c-d104768a1214': 3,
+        '19b10006-e8f2-537e-4f6c-d104768a1214': 4,
     };
 
     const valueByUUID = {
         '19b10001-e8f2-537e-4f6c-d104768a1214': 0,
         '19b10002-e8f2-537e-4f6c-d104768a1214': 0,
         '19b10003-e8f2-537e-4f6c-d104768a1214': 0,
-    //    '19b10004-e8f2-537e-4f6c-d104768a1214': 0,
+        '19b10005-e8f2-537e-4f6c-d104768a1214': 0,
     };
 
     // const readButton = document.getElementById('readButton');
@@ -134,14 +145,7 @@
     retrievedValues.forEach(retrievedValue => {
         // Проверка на цифры и ограничение длины ввода
         retrievedValue.addEventListener('input', (event) => {
-            const value = retrievedValue.innerHTML;
-            
-            /*
-            // отслеживание нажатия "Enter"
-            if (event.code === "Enter") {  
-                event.preventDefault();
-            };
-            */            
+            const value = retrievedValue.innerHTML;                    
                         
             // Проверка на цифры
             if (!/^\d*$/.test(value)) {
@@ -177,11 +181,6 @@
     });
 
     disconnectButton.addEventListener('click', disconnectDevice); // Disconnect Button
-
-    // Write to the ESP32 LED Characteristic
-    // onButton.addEventListener('click', () => writeOnCharacteristic(1));
-    // offButton.addEventListener('click', () => writeOnCharacteristic(0));
-    // readButton.addEventListener('click', ()=> readCharacteristic);
 
     writeButton.addEventListener('click', () => writeCharacteristicByButton()); // Нажатие кнопки "Записать параметры" 
     puskButton.addEventListener('click', () => puskStopCharacteristic(1)); // Нажатие кнопки "Пуск" 
@@ -226,7 +225,7 @@
             console.log('Ошибка при подключении:', error);
         });
     }
-
+   
     function readCharacteristicsSequentially(service, uuids) {
         let index = 0;
         function readNextCharacteristic() {
@@ -238,7 +237,9 @@
             index++;
             service.getCharacteristic(uuid)
                 .then(characteristic => {
-                    console.log("Характеристика найдена: ", characteristic.uuid);
+                    console.log("Характеристика найдена: ", characteristic.uuid);     
+                    characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+                    characteristic.startNotifications();             
                     return characteristic.readValue();
                 })
                 .then(value => {
@@ -249,8 +250,16 @@
                     console.log("Декодированное значение для", uuid, ":", decodedValue);
                     const index = indexByUUUI[uuid];
                     if (index !== undefined) {
-                        retrievedValues[index].innerHTML = decodedValue;
-                        valueByUUID[uuid] = decodedValue;
+                        if (index == 4) {
+                            if (decodedValue == 0) {
+                                retrievedValues[index].innerHTML = 'Стоп'
+                            } else {
+                                retrievedValues[index].innerHTML = 'В работе'
+                            }
+                        } else {
+                            retrievedValues[index].innerHTML = decodedValue;
+                            valueByUUID[uuid] = decodedValue;
+                        }
                     }
                     // Читаем следующую характеристику
                     readNextCharacteristic();
@@ -266,58 +275,6 @@
         timestampContainer.innerHTML = getDateTime();
     }
 
-    /*
-    function connectToDevice() {
-        console.log('Инициализация Bluetooth...');
-        navigator.bluetooth.requestDevice({
-            filters: [{ name: deviceName }],
-            optionalServices: [bleService]
-        })
-        .then(device => {
-            console.log('Выбранное устройство: ', device.name);
-            // bleStateContainer.innerHTML = 'Выполнено подключение к устройству: ' + device.name;
-            // bleStateContainer.style.color = "#24af37";
-            device.addEventListener('gattservicedisconnected', onDisconnected);
-            return device.gatt.connect();
-        })
-        .then(gattServer => {
-            bleServer = gattServer;
-            console.log("Подключен к серверу GATT");
-            return bleServer.getPrimaryService(bleService);
-        })
-        .then(service => {
-            bleServiceFound = service;
-            console.log("Обнаруженная услуга:", service.uuid);
-            bleStateContainer.innerHTML = 'Подключено';
-            bleStateContainer.style.color = "#24af37";
-            // Получаем все характеристики
-            return Promise.all(characteristicsUUIDs.map(uuid => service.getCharacteristic(uuid)));
-        })
-        .then(characteristics => {
-            // Читаем значения для каждой характеристики
-            return Promise.all(characteristics.map(characteristic => {
-                console.log("Обнаруженная характеристика: ", characteristic.uuid);
-                characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-                return characteristic.readValue().then(value => {
-                    const decodedValue = ((value.getUint32(0) & 0xFF) << 24)
-                        | ((value.getUint32(0) & 0xFF00) << 8)
-                        | ((value.getUint32(0) >> 8) & 0xFF00)
-                        | ((value.getUint32(0) >> 24) & 0xFF);
-                    console.log("Декодированное значение: ", decodedValue);
-                    const index = indexByUUUI[characteristic.uuid];
-                    if (index !== undefined) {
-                        retrievedValues[index].innerHTML = decodedValue;
-                        valueByUUID[characteristic.uuid] = decodedValue;
-                    }
-                });
-            }));
-        })
-        .catch(error => {
-            console.log('Error: ', error);
-        });
-    }
-    */
-
     function onDisconnected(event) {
         console.log('Отсключение от устройства:', event.target.device.name);
         bleStateContainer.innerHTML = "Устройство отключено";
@@ -328,6 +285,8 @@
 
     function handleCharacteristicChange(event) {
         // console.log("AAAA: ", event.target.uuid);
+        // console.log("AAAA: ", event.target.value);
+        // console.log("I WAS HERE");
         const newValueReceived = ((event.target.value.getUint32(0) & 0xFF) << 24)
                             | ((event.target.value.getUint32(0) & 0xFF00) << 8)
                             | ((event.target.value.getUint32(0) >> 8) & 0xFF00)
@@ -337,7 +296,15 @@
 
         const index = indexByUUUI[event.target.uuid]; // Получаем индекс из сопоставления
         if (index !== undefined) {
-            retrievedValues[index].innerHTML = newValueReceived;
+            if (index == 4) {
+                if (newValueReceived == 0) {
+                    retrievedValues[index].innerHTML = 'Стоп'
+                } else {
+                    retrievedValues[index].innerHTML = 'В работе'
+                }
+            } else {
+                retrievedValues[index].innerHTML = newValueReceived;
+            }
         } else {
             console.error("Недопустимый UUID: соответствующий индекс не найден.");
         }
@@ -382,38 +349,40 @@
 
     function writeCharacteristicByButton() {
         characteristicsUUIDs.forEach((uuid) => {
-            console.log("Запись по uuid: ", uuid);
-            if (bleServer && bleServer.connected) {
-                bleServiceFound.getCharacteristic(uuid)
-                    .then(characteristic => {
-                        console.log("Найдена характеристика: ", characteristic.uuid);
-                        const index = indexByUUUI[uuid]; // Получаем индекс из сопоставления
-                        if (index !== undefined) {
-                            data = retrievedValues[index].innerHTML;
-                            if (data != valueByUUID[uuid])
-                            {
-                                console.log(" \n ========== ЗАПИСЬ " + uuid + " ========== \n");
-                                uint8_data = new Uint8Array(4)
-                                uint8_data[0] = data & 0xff;
-                                uint8_data[1] = (data >> 8) & 0xff;
-                                uint8_data[2] = (data >> 16) & 0xff;
-                                uint8_data[3] = (data >> 24) & 0xff;
-                                console.log("Значение для записи: ", uint8_data);
-                                return characteristic.writeValue(uint8_data);
+            if (uuid != '19b10006-e8f2-537e-4f6c-d104768a1214') {
+                console.log("Запись по uuid: ", uuid);
+                if (bleServer && bleServer.connected) {
+                    bleServiceFound.getCharacteristic(uuid)
+                        .then(characteristic => {
+                            console.log("Найдена характеристика: ", characteristic.uuid);
+                            const index = indexByUUUI[uuid]; // Получаем индекс из сопоставления
+                            if (index !== undefined) {
+                                data = retrievedValues[index].innerHTML;
+                                if (data != valueByUUID[uuid])
+                                {
+                                    console.log(" \n ========== ЗАПИСЬ " + uuid + " ========== \n");
+                                    uint8_data = new Uint8Array(4)
+                                    uint8_data[0] = data & 0xff;
+                                    uint8_data[1] = (data >> 8) & 0xff;
+                                    uint8_data[2] = (data >> 16) & 0xff;
+                                    uint8_data[3] = (data >> 24) & 0xff;
+                                    console.log("Значение для записи: ", uint8_data);
+                                    return characteristic.writeValue(uint8_data);
+                                } else {
+                                    console.log("Значение для UUID " + uuid + " не изменилось");
+                                    console.log(data + " = " + valueByUUID[uuid]);
+                                }
                             } else {
-                                console.log("Значение для UUID " + uuid + " не изменилось");
-                                console.log(data + " = " + valueByUUID[uuid]);
+                                console.error("Недопустимый UUID: соответствующий индекс не найден.");
                             }
-                        } else {
-                            console.error("Недопустимый UUID: соответствующий индекс не найден.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Ошибка записи характеристики: ", error);
-                    });
-            } else {
-                console.error("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики.");
-                window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
+                        })
+                        .catch(error => {
+                            console.error("Ошибка записи характеристики: ", error);
+                        });
+                } else {
+                    console.error("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики.");
+                    window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
+                }
             }
         });
     }
@@ -450,29 +419,6 @@
             window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
         }
     }
-
-    /*
-    function writeOnCharacteristic(value) {
-        if (bleServer && bleServer.connected) {
-            bleServiceFound.getCharacteristic(ledCharacteristic)
-                .then(characteristic => {
-                    console.log("Found the LED characteristic: ", characteristic.uuid);
-                    const data = new Uint8Array([value]);
-                    return characteristic.writeValue(data);
-                })
-                .then(() => {
-                    latestValueSent.innerHTML = value;
-                    console.log("Value written to LEDcharacteristic:", value);
-                })
-                .catch(error => {
-                    console.error("Error writing to the LED characteristic: ", error);
-                });
-        } else {
-            console.error("Bluetooth is not connected. Cannot write to characteristic.")
-            window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
-        }
-    }
-    */
 
     function disconnectDevice() {
         console.log("Отключение от устройства");
