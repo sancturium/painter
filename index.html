@@ -313,6 +313,10 @@
                         if (characteristic.properties.notify) {
                             characteristic.startNotifications()
                             .then(() => {
+                                const name = charNameByUUID[uuid];
+                                if (name == undefined) {
+                                    name = uuid;               
+                                } 
                                 characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
                                 console.log("Уведомления для '" + name + "' включены.");
                                 startNotification();
