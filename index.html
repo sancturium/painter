@@ -45,8 +45,17 @@
                 <h2>Удаленный пуск</h2>
                 <button id="puskButton">Пуск</button>
                 <button id="stopButton">Стоп</button>
-                <p class="gray-label">Последняя команда: <span id="valueSent"></span></p>
+
+                <!-- Для запуска автоматически (по времени) -->
+                <div>
+                <button id="autoStartButton">Включить автозапуск</button>
+                <p class="reading">Интервал автозапуска: <span id="intervalValue" contenteditable="true">900</span> сек</p>
+                <p class="gray-label">Автозапуск работает только при активном подключении к устройству</p>
+                </div>
+                <!-- Для запуска автоматически (по времени) -->
+               
                 <p class="reading">Текущий статус: <span id="valueContainer5">Неизвестно</span></p>
+                <p class="gray-label">Последняя команда: <span id="valueSent"></span></p>
             </div>            
         </div>
         <div class="footer gray-label">
@@ -439,9 +448,57 @@
         }
     }
 
+    // ----- Для запуска автоматически (по времени) ----- //
+    var autoStartInterval = null;
+    var intervalSeconds = 5; // Интервал по умолчанию (можно сделать настраиваемым)
+
+    // Получаем элементы (добавить в список элементов HTML)
+    const autoStartButton = document.getElementById('autoStartButton');
+    const intervalValue = document.getElementById('intervalValue');
+
+    // Обработчик для кнопки автозапуска
+    autoStartButton.addEventListener('click', toggleAutoStart);
+
+    // Функция для включения/выключения автозапуска
+    function toggleAutoStart() {
+        if (autoStartInterval) {
+            clearInterval(autoStartInterval);
+            autoStartInterval = null;
+            autoStartButton.textContent = 'Включить автозапуск';
+            autoStartButton.style.backgroundColor = "#1b8a94";
+            console.log("Автозапуск остановлен");
+        } else {
+            // Получаем интервал из поля ввода
+            const seconds = parseInt(intervalValue.textContent) || 900;
+            if (seconds < 1) {
+                alert("Интервал должен быть не менее 1 секунды");
+                return;
+            }
+            
+            autoStartInterval = setInterval(() => {
+                puskStopCharacteristic(1); // Отправляем команду "Пуск"
+                console.log(`Автоматический пуск (интервал: ${seconds} сек)`);
+            }, seconds * 1000);
+            
+            autoStartButton.textContent = 'Остановить автозапуск';
+            autoStartButton.style.backgroundColor = "#941b35";
+            console.log(`Автозапуск включен с интервалом ${seconds} секунд`);
+        }
+    }
+
+    // Добавляем валидацию для поля интервала
+    intervalValue.addEventListener('input', () => {
+        const value = intervalValue.textContent.replace(/\D/g, '');
+        intervalValue.textContent = value || '900';
+    });
+    // ----- Для запуска автоматически (по времени) ----- //
+
     // Отключение от устройства
     function disconnectDevice() {
         console.log("Отключение от устройства");
+        autoStartInterval = null;
+        autoStartButton.textContent = 'Включить автозапуск';
+        autoStartButton.style.backgroundColor  = "#1b8a94";
         let index = 0;
         function disconenctAllNotifications() {
             if (index >=  chars_UUID.length) {
