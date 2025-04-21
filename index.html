@@ -24,7 +24,7 @@
                 <p>Статус подключения: <strong><span id="bleState" style="color:#d13a30;">Отключено</span></strong></p>
             </div>
         </div>
-        <p class="reading">Обновление данных: <span id="timestamp"></span></p>
+        <p class="reading">Обновление данных: <span id="cmdType">(Тип команды) </span><span id="timestamp"></span></p>
         <div class="card-grid">
             <div class="card">
                 <h2>Параметры</h2>
@@ -75,6 +75,7 @@
     const latestValueSent = document.getElementById('valueSent');               // Поле "Последняя команда"
     const bleStateContainer = document.getElementById('bleState');              // Поле "Статус подключения"
     const timestampContainer = document.getElementById('timestamp');            // Поле "Обновление данных"
+    const cmdTypeContainer = document.getElementById('cmdType');                         // Поле "Тип команды" (при обновлении)
     const writeButton = document.getElementById('writeButton')                  // Кнопка "Записать параметры"
     const puskButton = document.getElementById('puskButton')                    // Кнопка "Пуск"
     const stopButton = document.getElementById('stopButton')                    // Кнопка "Стоп"
@@ -281,6 +282,7 @@
                     } else {
                         valueContainerByUUID[uuid].textContent =  decodedValue;
                     }                
+                    cmdTypeContainer.innerHTML = "(Чтение) ";
                     timestampContainer.innerHTML = getDateTime();
                     readNextCharacteristic();
                 })
@@ -292,6 +294,7 @@
             }
             // Начинаем чтение
             readNextCharacteristic();
+            cmdTypeContainer.innerHTML = "(Чтение) ";
             timestampContainer.innerHTML = getDateTime();
         })
         .catch(errors => {
@@ -372,6 +375,7 @@
         } else {
             valueContainerByUUID[event.target.uuid].textContent =  decodedValue;
         }
+        cmdTypeContainer.innerHTML = "(Уведомление) ";
         timestampContainer.innerHTML = getDateTime();
     }
 
@@ -397,6 +401,8 @@
                                 uint8_data[2] = (data >> 16) & 0xff;
                                 uint8_data[3] = (data >> 24) & 0xff;
                                 console.log("Значение для записи: ", uint8_data);
+                                cmdTypeContainer.innerHTML = "(Запись) ";
+                                timestampContainer.innerHTML = getDateTime();
                                 return characteristic.writeValue(uint8_data);                                    
                             } else {
                                 console.error("Недопустимый UUID: соответствующий индекс не найден.");
@@ -489,7 +495,21 @@
     // Добавляем валидацию для поля интервала
     intervalValue.addEventListener('input', () => {
         const value = intervalValue.textContent.replace(/\D/g, '');
-        intervalValue.textContent = value || '900';
+        intervalValue.innerHTML = value || '900';
+        // intervalValue.textContent = value || '900';
+
+        // Проверка на цифры
+        /*
+        if (!/^\d*$/.test(value)) {
+            element.innerHTML = value.replace(/\D/g, ''); // Удаляем все нецифровые символы
+            alert("Можно вводить только цифры.");
+        }
+
+        // Ограничение длины ввода
+        if (value.length > MAX_LEN) {
+            element.innerHTML = value.substr(0, MAX_LEN);
+        }
+        */
     });
     // ----- Для запуска автоматически (по времени) ----- //
 
