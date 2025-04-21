@@ -59,7 +59,7 @@
             </div>            
         </div>
         <div class="footer gray-label">
-            <p>Palitra V1 rev.0</p>
+            <p>Palitra V1 rev.1</p>
             <p>ООО "Лидер" 2025</p>
             <p>Created by Salikhova A.G.</p>
         </div>
@@ -381,7 +381,72 @@
     }
 
     // Запись параметров по кнопке "Записать параметры"
-    function writeCharacteristicByButton() {
+    function writeCharacteristicByButton() {      
+        return new Promise((resolve, reject) => {
+            let errors = [];
+            let index = 0;
+            function writeParam() {
+                if (index >=  chars_UUID.length) {
+                    if (errors.length > 0) {
+                        reject(errors); // Если были ошибки, возвращаем их
+                    } else {                        
+                        resolve(true); // Если всё успешно, возвращаем true
+                    }
+                    cmdTypeContainer.innerHTML = "(Запись) ";
+                    timestampContainer.innerHTML = getDateTime();
+                    return;
+                }               
+                const uuid = chars_UUID[index];
+                index++;
+                if (bleServer && bleServer.connected) {
+                    bleServiceFound.getCharacteristic(uuid)
+                    .then(characteristic => {
+                        if ((uuid != '19b10006-e8f2-537e-4f6c-d104768a1214') & (uuid != '19b10004-e8f2-537e-4f6c-d104768a1214')) {
+                            const name = charNameByUUID[uuid];
+                            if (name == undefined) {
+                                name = uuid;               
+                            }
+                            if (characteristic.properties.write) {
+                                data = valueContainerByUUID[uuid].innerHTML;
+                                if (data !== undefined) {
+                                    console.log("Запись характеристики '" + name + "':" + data);
+                                    // console.log(" \n ========== ЗАПИСЬ " + uuid + " ========== \n");
+                                    uint8_data = new Uint8Array(4)
+                                    uint8_data[0] = data & 0xff;
+                                    uint8_data[1] = (data >> 8) & 0xff;
+                                    uint8_data[2] = (data >> 16) & 0xff;
+                                    uint8_data[3] = (data >> 24) & 0xff;
+                                    // console.log("Значение для записи: ", uint8_data);
+                                    cmdTypeContainer.innerHTML = "(Запись) ";
+                                    timestampContainer.innerHTML = getDateTime();
+                                    characteristic.writeValue(uint8_data);
+                                    writeParam();
+                                    // return characteristic.writeValue(uint8_data);                                    
+                                } else {
+                                    console.error("Недопустимый UUID: соответствующий индекс не найден.");
+                                    writeParam();
+                                }
+                            } else {
+                                console.error("Характеристика " + characteristic.uuid + " НЕ поддерживает запись");
+                                writeParam();
+                            }               
+                        } else {
+                            writeParam();
+                        }                      
+                    })
+                    .catch(error => {
+                        console.error("Ошибка подключения: ", error);
+                        writeParam();
+                    }); 
+                } else {
+                    console.error("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики.");
+                    window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
+                }
+            }
+            writeParam();
+        });
+
+        /*
         chars_UUID.forEach((uuid) => {
             if ((uuid != '19b10006-e8f2-537e-4f6c-d104768a1214') & (uuid != '19b10004-e8f2-537e-4f6c-d104768a1214')) { // Если не Статус и Пуск/Стоп                
                 if (bleServer && bleServer.connected) {
@@ -421,6 +486,7 @@
                 }
             }
         });
+        */
     }
 
     // Обработка записи команды Пуск/Стоп
