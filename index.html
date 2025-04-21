@@ -390,7 +390,7 @@
                         if (name == undefined) {
                             name = uuid;               
                         }                       
-                        if (characteristic.properties.write) {
+                        //if (characteristic.properties.write) {
                             data = valueContainerByUUID[uuid].innerHTML;
                             if (data !== undefined) {
                                 console.log("Запись характеристики '" + name + "':" + data);
@@ -407,9 +407,9 @@
                             } else {
                                 console.error("Недопустимый UUID: соответствующий индекс не найден.");
                             }
-                        } else {
-                            console.error("Характеристика " + characteristic.uuid + " НЕ поддерживает запись");
-                        }
+                        //} else {
+                        //    console.error("Характеристика " + characteristic.uuid + " НЕ поддерживает запись");
+                        //}
                     })
                     .catch(error => {
                         console.error("Ошибка записи характеристики: ", error);
