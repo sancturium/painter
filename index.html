@@ -59,7 +59,7 @@
             </div>            
         </div>
         <div class="footer gray-label">
-            <p>Palitra V1 rev.2</p>
+            <p>Palitra V1 rev.3</p>
             <p>ООО "Лидер" 2025</p>
             <p>Created by Salikhova A.G.</p>
         </div>
@@ -443,96 +443,6 @@
 
             writeParam();
         });
-                
-        /*
-                if (bleServer && bleServer.connected) {
-                    bleServiceFound.getCharacteristic(uuid)
-                    .then(characteristic => {
-                        if ((uuid != '19b10006-e8f2-537e-4f6c-d104768a1214') & (uuid != '19b10004-e8f2-537e-4f6c-d104768a1214')) {
-                            const name = charNameByUUID[uuid];
-                            if (name == undefined) {
-                                name = uuid;               
-                            }
-                            if (characteristic.properties.write) {
-                                data = valueContainerByUUID[uuid].innerHTML;
-                                if (data !== undefined) {
-                                    console.log("Запись характеристики '" + name + "':" + data);
-                                    // console.log(" \n ========== ЗАПИСЬ " + uuid + " ========== \n");
-                                    uint8_data = new Uint8Array(4)
-                                    uint8_data[0] = data & 0xff;
-                                    uint8_data[1] = (data >> 8) & 0xff;
-                                    uint8_data[2] = (data >> 16) & 0xff;
-                                    uint8_data[3] = (data >> 24) & 0xff;
-                                    // console.log("Значение для записи: ", uint8_data);
-                                    cmdTypeContainer.innerHTML = "(Запись) ";
-                                    timestampContainer.innerHTML = getDateTime();
-                                    characteristic.writeValue(uint8_data);                                                                        
-                                } else {
-                                    console.error("Недопустимый UUID: соответствующий индекс не найден.");
-                                    writeParam();
-                                }
-                            } else {
-                                console.error("Характеристика " + characteristic.uuid + " НЕ поддерживает запись");
-                                writeParam();
-                            }               
-                        } else {
-                            writeParam();
-                        }                      
-                    })
-                    .catch(error => {
-                        console.error("Ошибка подключения: ", error);
-                        writeParam();
-                    }); 
-                } else {
-                    console.error("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики.");
-                    window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
-                }
-            }
-            writeParam();
-        });
-        */
-
-        /*
-        chars_UUID.forEach((uuid) => {
-            if ((uuid != '19b10006-e8f2-537e-4f6c-d104768a1214') & (uuid != '19b10004-e8f2-537e-4f6c-d104768a1214')) { // Если не Статус и Пуск/Стоп                
-                if (bleServer && bleServer.connected) {
-                    bleServiceFound.getCharacteristic(uuid)
-                    .then(characteristic => {
-                        const name = charNameByUUID[uuid];
-                        if (name == undefined) {
-                            name = uuid;               
-                        }                       
-                        //if (characteristic.properties.write) {
-                            data = valueContainerByUUID[uuid].innerHTML;
-                            if (data !== undefined) {
-                                console.log("Запись характеристики '" + name + "':" + data);
-                                // console.log(" \n ========== ЗАПИСЬ " + uuid + " ========== \n");
-                                uint8_data = new Uint8Array(4)
-                                uint8_data[0] = data & 0xff;
-                                uint8_data[1] = (data >> 8) & 0xff;
-                                uint8_data[2] = (data >> 16) & 0xff;
-                                uint8_data[3] = (data >> 24) & 0xff;
-                                console.log("Значение для записи: ", uint8_data);
-                                cmdTypeContainer.innerHTML = "(Запись) ";
-                                timestampContainer.innerHTML = getDateTime();
-                                return characteristic.writeValue(uint8_data);                                    
-                            } else {
-                                console.error("Недопустимый UUID: соответствующий индекс не найден.");
-                            }
-                        //} else {
-                        //    console.error("Характеристика " + characteristic.uuid + " НЕ поддерживает запись");
-                        //}
-                    })
-                    .catch(error => {
-                        console.error("Ошибка записи характеристики: ", error);
-                    });
-                } else {
-                    console.error("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики.");
-                    window.alert("Bluetooth не подключен. Не удается выполнить считывание данных из характеристики. \nСначала подключитесь к устройству!");
-                }
-            }
-        });
-        */
     }
 
     // Обработка записи команды Пуск/Стоп
@@ -608,21 +518,7 @@
     // Добавляем валидацию для поля интервала
     intervalValue.addEventListener('input', () => {
         const value = intervalValue.textContent.replace(/\D/g, '');
-        intervalValue.innerHTML = value || '900';
-        // intervalValue.textContent = value || '900';
-
-        // Проверка на цифры
-        /*
-        if (!/^\d*$/.test(value)) {
-            element.innerHTML = value.replace(/\D/g, ''); // Удаляем все нецифровые символы
-            alert("Можно вводить только цифры.");
-        }
-
-        // Ограничение длины ввода
-        if (value.length > MAX_LEN) {
-            element.innerHTML = value.substr(0, MAX_LEN);
-        }
-        */
+        intervalValue.innerHTML = value || '900';        
     });
     // ----- Для запуска автоматически (по времени) ----- //
 
