@@ -59,7 +59,7 @@
             </div>            
         </div>
         <div class="footer gray-label">
-            <p>Palitra V1 rev.1</p>
+            <p>Palitra V1 rev.2</p>
             <p>ООО "Лидер" 2025</p>
             <p>Created by Salikhova A.G.</p>
         </div>
@@ -385,19 +385,66 @@
         return new Promise((resolve, reject) => {
             let errors = [];
             let index = 0;
+
             function writeParam() {
                 if (index >=  chars_UUID.length) {
                     if (errors.length > 0) {
                         reject(errors); // Если были ошибки, возвращаем их
-                    } else {                        
+                    } else {          
+                        cmdTypeContainer.innerHTML = "(Запись) ";
+                        timestampContainer.innerHTML = getDateTime();              
                         resolve(true); // Если всё успешно, возвращаем true
-                    }
-                    cmdTypeContainer.innerHTML = "(Запись) ";
-                    timestampContainer.innerHTML = getDateTime();
+                    }                   
                     return;
                 }               
                 const uuid = chars_UUID[index];
                 index++;
+                
+                // Если Статус или Пуск/Стоп
+                if (uuid === '19b10006-e8f2-537e-4f6c-d104768a1214' || 
+                    uuid === '19b10004-e8f2-537e-4f6c-d104768a1214') {
+                    return writeParam();
+                }
+
+                if (!bleServer || !bleServer.connected) {
+                    const error = "Bluetooth не подключен";
+                    console.error(error);
+                    errors.push(error);
+                    return writeParam();
+                }
+
+                bleServiceFound.getCharacteristic(uuid)
+                .then(characteristic => {
+                    if (!characteristic.properties.write) {
+                        throw new Error(`Характеристика ${uuid} не поддерживает запись`);
+                    }
+
+                    const data = parseInt(valueContainerByUUID[uuid].textContent) || 0;
+                    // console.log(`Запись характеристики ${uuid}: ${data}`);
+                    console.log(`Запись характеристики "${charNameByUUID[uuid]}": ${data}`);
+
+                    const buffer = new ArrayBuffer(4);
+                    const view = new DataView(buffer);
+                    view.setUint32(0, data, true);
+
+                    return characteristic.writeValue(buffer)
+                        .then(() => {
+                            cmdTypeContainer.innerHTML = "(Запись) ";
+                            timestampContainer.innerHTML = getDateTime();
+                        });
+                })
+                .then(() => writeParam())
+                .catch(error => {
+                    console.error(`Ошибка записи ${uuid}:`, error);
+                    errors.push(error.message || error.toString());
+                    writeParam();
+                });
+            }
+
+            writeParam();
+        });
+                
+        /*
                 if (bleServer && bleServer.connected) {
                     bleServiceFound.getCharacteristic(uuid)
                     .then(characteristic => {
@@ -419,9 +466,7 @@
                                     // console.log("Значение для записи: ", uint8_data);
                                     cmdTypeContainer.innerHTML = "(Запись) ";
                                     timestampContainer.innerHTML = getDateTime();
-                                    characteristic.writeValue(uint8_data);
-                                    writeParam();
-                                    // return characteristic.writeValue(uint8_data);                                    
+                                    characteristic.writeValue(uint8_data);                                                                        
                                 } else {
                                     console.error("Недопустимый UUID: соответствующий индекс не найден.");
                                     writeParam();
@@ -445,6 +490,7 @@
             }
             writeParam();
         });
+        */
 
         /*
         chars_UUID.forEach((uuid) => {
